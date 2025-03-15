@@ -100,11 +100,19 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Community',
             items: [
               {
-                label: 'Tutorial',
-                to: '/docs/intro',
+                label: 'React官网',
+                href: 'https://zh-hans.react.dev/',
+              },
+              {
+                label: 'React源码解析',
+                href: 'https://github.com/7kms/react-illustration-series?tab=readme-ov-file',
+              },
+              {
+                label: 'React Router',
+                href: 'https://reactrouter.com.cn/home',
               },
             ],
           },

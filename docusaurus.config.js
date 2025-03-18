@@ -4,7 +4,9 @@
 // There are various equivalent ways to declare your Docusaurus config.
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
-import {themes as prismThemes} from 'prism-react-renderer';
+import {
+  themes as prismThemes
+} from 'prism-react-renderer';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -24,7 +26,7 @@ const config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'Krysent', // Usually your GitHub org/user name.
   projectName: 'krysent.github.io', // Usually your repo name.
-  deploymentBranch:'gh-pages',
+  deploymentBranch: 'gh-pages',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
 
@@ -41,13 +43,13 @@ const config = {
       'classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
-        docs: {
-          sidebarPath: './sidebars.js',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-        },
+        docs: false,
+        // {
+        //   sidebarPath: './sidebars.js',
+        //   // Please change this to your repo.
+        //   // Remove this to remove the "edit this page" links.
+        //   editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+        // },
         blog: {
           showReadingTime: true,
           feedOptions: {
@@ -56,8 +58,7 @@ const config = {
           },
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+          editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -69,6 +70,37 @@ const config = {
       }),
     ],
   ],
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'notes',
+        path: 'docs/notes',
+        routeBasePath: 'docs/notes',
+        sidebarPath: require.resolve('./sidebars.js')
+      }
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'interview',
+        path: 'docs/interview',
+        routeBasePath: 'docs/interview',
+        sidebarPath: require.resolve('./sidebars.js')
+      }
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'project_issue',
+        path: 'docs/project_issue',
+        routeBasePath: 'docs/project_issue',
+        sidebarPath: require.resolve('./sidebars.js')
+      }
+    ],
+  ],
+
+
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -82,13 +114,40 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
+          // {
+          //   type: 'docSidebar',
+          //   sidebarId: 'tutorialSidebar',
+          //   position: 'left',
+          //   label: '学习笔记',
+          // },
+
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
+            type: 'doc',
+            docId: 'intro', // 对应 demo1/index.md
+            docsPluginId: 'notes', // 指定插件 ID
             position: 'left',
             label: '学习笔记',
           },
-          {to: '/blog', label: 'Blog', position: 'left'},
+          {
+            type: 'doc',
+            docId: 'intro', // 对应 demo2/index.md
+            docsPluginId: 'interview', // 指定插件 ID
+            position: 'left',
+            label: '面试题整理',
+          },
+          {
+            type: 'doc',
+            docId: 'intro', // 对应 demo1/index.md
+            docsPluginId: 'project_issue', // 指定插件 ID
+            position: 'left',
+            label: '项目问题',
+          },
+        
+          {
+            to: '/blog',
+            label: '日志',
+            position: 'left'
+          },
           {
             href: 'https://github.com/facebook/docusaurus',
             label: 'GitHub',
@@ -98,11 +157,9 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
+        links: [{
             title: 'Community',
-            items: [
-              {
+            items: [{
                 label: 'React官网',
                 href: 'https://zh-hans.react.dev/',
               },
@@ -114,18 +171,17 @@ const config = {
                 label: 'React Router',
                 href: 'https://reactrouter.com.cn/home',
               },
+              {
+                label: '稀土掘金',
+                href: 'https://juejin.cn/',
+              },
             ],
           },
           {
-            title: 'Community',
-            items: [
-              {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-              },
-              {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
+            title: 'DOCS',
+            items: [{
+                label: 'Docusaurus.io',
+                href: 'https://docusaurus.io/',
               },
               {
                 label: 'X',
@@ -135,8 +191,7 @@ const config = {
           },
           {
             title: 'More',
-            items: [
-              {
+            items: [{
                 label: 'Blog',
                 to: '/blog',
               },
@@ -147,7 +202,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © New ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

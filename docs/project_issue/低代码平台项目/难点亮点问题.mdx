@@ -1,0 +1,88 @@
+# 低代码平台物料体系与编排引擎设计重难点
+
+## 低代码平台的物料（组件）是怎么管理的，远程物料是如何加载？请详细说明核心流程和方案
+
+插件化设计
+
+webpack、eslint、vue、babel、vite都有插件化身影
+
+### 前置知识：插件化设计
+
+```js
+
+{
+    plugins:[
+        vue(),
+        splitChunk(),
+        react()
+    ]
+}
+```
+
+- 插件化基座
+- 插件化协议
+- 插件生命周期
+- 插件开发 Plugin
+
+### 具体模块化定义
+物料取名：Button、Image、Text、Container
+
+核心系统（BlockSuit类）来更改
+
+- ButtonPlugin=> ButtonBlock
+- ImagePlugin=> ImageBlock
+- TextPlugin=> TextBlock
+
+
+
+**物料最重要的两个东西是什么？**
+- 数据协议 ： json 数据 表示物料的内容
+- 物料渲染引擎 ： 组件视图
+
+#### 数据协议
+案例：
+```js
+//定义一个按钮插件物料的协议
+ const ButtonBlock = {
+     type:'button',
+     id:'bt1',
+     props:{
+         text:'xxxx',
+     },
+     style:{
+         color:'#ccc',
+         fontSize:16,
+         backgroundColor:'#000'
+     },
+     events:{} //定义事件协议
+ }
+//定义一个文本插件物料的协议
+ const TextBlock = {
+     type:'text',
+     id:'t1',
+     props:{
+         text:'xxxx',
+     },
+     style:{
+         color:'#red',
+         fontSize:16,
+         backgroundColor:'#000'
+     },
+     events:{} //定义事件协议
+ }
+
+```
+
+
+#### 渲染引擎
+组件，用来将json 数据渲染成页面
+
+统一设计一个Renderer，通过策略模式负责数据转化加工、数据到组件的传递、组件渲染
+
+```html
+<div>
+    <templete :is={...Block}>  
+    ....物料渲染内容
+    </templete>
+</div>
+```

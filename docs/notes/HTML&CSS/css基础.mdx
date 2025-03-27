@@ -1,0 +1,115 @@
+# CSS基础点整理
+
+## 盒子模型
+所有html元素可以看成一个盒子，它包括：边框 margin，边框 border，填充 padding，和 实际内容 content
+### 标准盒子模型（W3C模型）
+box-sizing: content-box; 盒子的大小会因为设置的内外边距和边框而变化，即：外扩；
+
+**标准盒模型宽高 = 内容区域（content）宽高**
+### 怪异盒子模型（IE盒模型）
+box-sizing: box-border;盒子的实际大小是设置的大小，不会因为内外边距和边框的大小而变化，即：内缩；
+
+**怪异盒模型宽高 = border + padding + 内容区宽高（content）**
+
+## margin和padding
+
+**负值问题**
+- margin可以有负值，left、top如果是负值向反方向移动，right和bottom负值不会有影响
+- padding不能有负值
+
+**百分比问题**
+如果设置值为百分比，则是按照父元素的宽度来定
+
+**margin纵向重叠问题**
+margin纵向塌陷，分为兄弟盒子之间塌陷问题和父子盒子之间塌陷问题
+- 兄弟盒子之间塌陷问题
+
+    元素垂直排列时，第一个元素的下外边距与第二个元素的上外边距会发生合并，合并后的间距就是两者中最大的那个值。
+
+    解决办法：
+    - 任何一个元素加上 display:inline-block;
+    - 把外边距只加在其中一个元素上
+    - 任意一个元素外边距换成对应的 padding
+- 父子盒子之间的穿透问题
+
+    当一个元素包含在另一个元素中时,如果父元素没有设置内边距或边框把外边距分隔开，它们的上或下外边距也会发生合并
+
+    解决办法：
+    - 给父子元素中任一个加上position: absolute;
+    - 给父元素加上overflow: hidden;
+    - 给父子元素中任一个加上float: left;
+    - 给父子元素中任一个加上 display: inline-block;
+    - 给父元素添加 border 边框
+    - 给父元素加上 display:table;
+    - 将子元素的 margin 改成 pading
+
+## Flex布局
+flex 布局又称为弹性布局。
+
+● 当我们给一个容器元素设置 display:flex; 时，这个容器就变成了 flex 容器，容器中所有直接子元素就成了容器成员（flex 项目）。
+
+● flex 容器默认存在两根轴：水平的主轴和垂直的交叉轴，flex 布局主要是围绕这两根轴来进行布局的。
+
+● 所以 flex 布局相对于 grid 网格布局来说，他更适合一维布局（单行或单列布局）
+
+要详细弄懂 flex 布局，我们就要了解 Flex 容器的属性和 Flex 项目的属性。
+
+<a href='https://juejin.cn/post/7408934077674258442'>flex布局知识点掘金笔记整理</a>
+
+
+## BFC
+BFC 全称为块级格式化上下文 (Block Formatting Context) ,可以说BFC就是一个作用范围，把它理解成是一个独立的容器，并且这个容器里box的布局与这个容器外的box毫不相干。在页面上的一个隔离的独立容器，是一个独立的渲染区域。
+
+### BFC特点
+- 内部的盒会在垂直方向一个接一个排列（可以看作BFC中有一个的常规流）
+
+- 处于同一个BFC中的元素相互影响，可能会发生外边距重叠
+
+- 每个元素的margin box的左边，与容器块border box的左边相接触(对于从左往右的格式化，否则相反)，即使存在浮动也是如此
+
+- BFC就是页面上的一个隔离的独立容器，容器里面的子元素不会影响到外面的元素，反之亦然
+
+- 计算BFC的高度时，考虑BFC所包含的所有元素，连浮动元素也参与计算
+
+- 浮动盒区域不叠加到BFC上
+
+### 如何产生BFC？
+有以下条件可以创建 BFC：
+● 方法一：float 的值不是 none
+
+  ○ 该方法可以实现效果，但没有意义，不可能随便给盒子设置浮
+
+● 方法二：display 的值是 inline-block、flex 或 inline-flex
+
+  ○ 该方法可以实现效果，但没有意义，不可能随便改变盒子为行内块
+
+● 方法三：position 的值不是 static 或者 relative
+
+  ○ 该方法可以实现效果，但不靠谱
+
+● 方法四：overflow 的值不为 visible
+
+  ○ overflow：hidden； 该方法可以实现效果，是非常好用的让盒子形成 BFC 的方法，但不能满足所有的场景
+
+### BFC的作用？
+- 解决外边距margin重叠问题：通过给两个元素设置 overflow 属性，从而触发 BFC，解决外部边距重叠问题。
+- 盒子margin塌陷问题：当我们需要在一个父元素中需要写一些列表项进行包裹时，然而，使用 float 就会导致对应元素脱离文档流，父元素不能包裹住子元素。可以通过使用overflow来清除浮动。设置overflow:hidden，触发了bfc
+
+### 清除浮动的方案
+
+1. 给浮动元素的::after伪类设置clear:both（强烈推荐）
+
+2. 给浮动元素的父元素创建BFC，设置overflow:hidden
+
+3. 给浮动元素后的父元素设置clear:both（不推荐）
+
+## 垂直居中的方案
+| 方法                   | 实现代码                                                                 | 注意事项                                                                                     | 
+|------------------------|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| 行内元素水平垂直居中   | `line-height: 35px;``text-align: center;`                            | 这个垂直居中只针对单行文本有效，需保证 `line-height` 值与容器高度一致                         | 
+| 绝对定位 + margin       | `position: absolute;``top: 50%;``margin-top: -元素自身高度一半;``left: 50%;``margin-left: -元素自身宽度一半;` | 需要明确指定子元素的宽高                                                                     | 
+| 绝对定位 + margin: auto | `position: absolute;``margin: auto;`                                 | 必须指定子元素宽高；未指定宽高时子元素会占满父容器                                           | 
+| 绝对定位 + translate    | `position: absolute;``left: 50%;``top: 50%;``transform: translate(-50%, -50%);` | 无需指定子元素宽高（推荐）`translate` 百分比基于元素自身宽高动态计算                      | 
+| flex 布局               | 父元素添加：`display: flex;``justify-content: center;``align-items: center;` | 父容器内所有子元素均居中                                                                     | 
+| flex + margin: auto     | 父元素：`display: flex;`子元素：`margin: auto;`                      | 可指定单个子元素居中                                                                         |  
+| table-cell              | 父元素添加：`display: table-cell;``text-align: center;``vertical-align: middle;` | 避免同时使用 `float` 或 `position: absolute``margin` 在 table-cell 布局中无效            | 

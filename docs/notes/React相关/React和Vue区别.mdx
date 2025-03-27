@@ -1,0 +1,145 @@
+# react和vue的区别
+
+## 设计差异
+| 维度 | react | vue|
+|---- | ----- | ----|
+| 核心定位 |专注 UI 层的声明式渲染库 | 渐进式框架（提供完整解决方案）|
+| 设计目标 | 强调灵活性和组合性（Learn Once, Write Anywhere）| 强调开发体验和易用性（渐进增强）|
+|技术栈扩展| 需要自主选择路由、状态管理方案（如 Redux、MobX） |官方提供路由（Vue Router）、状态管理（Pinia/Vuex）|
+
+## 语法对比
+1. **react使用jsx**
+```js
+// 组件逻辑与模板混合编写
+function Button({ onClick }) {
+  return (
+    <button className="primary-btn" onClick={onClick}>
+      Click Me
+    </button>
+  );
+}
+```
+
+特点：
+
+- 用 JavaScript 表达 UI（All in JS）
+
+- 支持完整的 JavaScript 表达式
+
+- 需要手动绑定事件（如 `onClick={handleClick}`）
+
+2. **vue使用单文件组件**
+
+```js
+<template>
+  <button class="primary-btn" @click="handleClick">
+    {{ buttonText }}
+  </button>
+</template>
+
+<script setup>
+const buttonText = 'Click Me';
+const handleClick = () => { /* ... */ };
+</script>
+
+<style scoped>
+.primary-btn { /* 样式 */ }
+</style>
+```
+
+特点：
+
+- 模板、逻辑、样式分离但集中管理
+
+- 指令系统简化 DOM 操作（如 `v-if`, `v-for`）
+
+- 自动事件绑定（`@click` 语法糖）
+
+## 数据响应
+- React 为单项数据流。基于不可变数据，通过`setState`、`useState`来触发重新渲染，需要开发者显示调用api
+- Vue 是双向数据绑定。基于Proxy（Vue2是Object.defineProperty）的数据劫持更新。数据自动触发更新不需要手动去更改。
+
+代码对比：
+```js
+// React：需要手动触发更新
+const [count, setCount] = useState(0);
+const increment = () => setCount(count + 1);
+
+// Vue：数据修改自动响应
+const count = ref(0);
+const increment = () => count.value++;
+```
+
+## 组件的实现
+
+1. React是函数式组件+hooks（v16.9+），之前是使用class类组件的形式。万物皆组件。
+
+特点：
+- 逻辑复用依赖 Hooks（useState/useEffect）
+
+- 强调纯函数和副作用分离
+```js
+function UserList() {
+  const [users, setUsers] = useState([]);
+  
+  useEffect(() => {
+    fetchUsers().then(data => setUsers(data));
+  }, []);
+
+  return (
+    <ul>
+      {users.map(user => <li key={user.id}>{user.name}</li>)}
+    </ul>
+  );
+}
+```
+
+
+2. Vue是组合式Api
+```js
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const users = ref([]);
+const fetchData = async () => {
+  users.value = await fetchUsers();
+};
+
+onMounted(fetchData);
+</script>
+
+<template>
+  <ul>
+    <li v-for="user in users" :key="user.id">{{ user.name }}</li>
+  </ul>
+</template>
+```
+
+特点：
+
+- 逻辑组合更灵活（类似 React Hooks）
+
+- 自动追踪依赖，无需手动声明依赖数组
+
+## 性能优化策略
+1. React优化手段：memo函数的记忆组件，结合useMemo、useCallback缓存内容。**场景：避免不必要的子组件被渲染**
+2. Vue优化手段：`<KeepAlive/>`组件自动缓存，computed组件重新计算。**依赖追踪粒度到属性级别**
+
+## 生态链
+- React: ReactRouter、Redux、ReactNative、
+- Vue:Cli、Vite、Uniapp
+
+## 开发场景
+选择 React：
+✅ 大型复杂应用
+✅ 需要高度定制化架构
+✅ 团队有较强 JavaScript 基础
+
+选择 Vue：
+✅ 快速开发中小型项目
+✅ 开发者偏好简洁的模板语法
+✅ 需要开箱即用的完整解决方案
+
+## 总结
+两者本质都是优秀的 UI 解决方案，React 更注重灵活性和工程化，Vue 更注重开发体验和渐进性。建议根据团队技术栈、项目规模和长期维护需求做选择。
+

@@ -274,7 +274,7 @@ fileName:'[name]-[contenthash].bundle.js'
 - parallel-webpack：运用于多入口项目
 - terserWebpackPlugin：支持多进程方式代码压缩、uglify功能
 
-##构建优化
+## 构建优化
 ### 加快构建速度(打包速度)
 
 使用 speed-measure-webpack-plugin 插件可以测量各个插件和loader所花费的时间，量化打包速度，判断优化效果
@@ -293,7 +293,7 @@ fileName:'[name]-[contenthash].bundle.js'
 6. 使用 IgnorePlugin 忽略第三方包指定目录，例如 moment 的本地语言包
 7. 使用 webpack-parallel-uglify-plugin 开启 JS 多进程压缩
 
-###减少打包文件体积
+### 减少打包文件体积
 
 引入 webpack-bundle-analyzer 分析打包后的文件，判断哪些包还可以拆分和优化
 

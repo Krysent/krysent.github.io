@@ -1,0 +1,514 @@
+# JavaScript进阶面试题
+
+## 实现图片懒加载的思路
+判断图片所在位置是否在可视区域内，图片移到可视区域内进行加载，提供三种判断方法：
+
+1. offsetTop < clientHeight + scrollTop
+2. element.getBoundingClientRect().top < clientHeight
+3. IntersectionObserver
+
+- 方案一:clientHeight、scrollTop 和 offsetTop
+
+首先给图片一个占位资源:
+
+```js
+
+<img src="default.jpg" data-src="http://www.xxx.com/target.jpg" />
+```
+
+接着，通过监听 scroll 事件来判断图片是否到达视口:
+
+```
+let img = document.getElementsByTagName("img");
+let num = img.length;
+let count = 0;//计数器，从第一张图片开始计
+
+lazyload();//首次加载别忘了显示图片
+
+window.addEventListener('scroll', lazyload);
+
+function lazyload() {
+  let viewHeight = document.documentElement.clientHeight;//视口高度
+  let scrollTop = document.documentElement.scrollTop || document.body.scrollTop;//滚动条卷去的高度
+  for(let i = count; i <num; i++) {
+    // 元素现在已经出现在视口中
+    if(img[i].offsetTop < scrollHeight + viewHeight) {
+      if(img[i].getAttribute("src") !== "default.jpg") continue;
+      img[i].src = img[i].getAttribute("data-src");
+      count ++;
+    }
+  }
+}
+```
+
+当然，最好对 scroll 事件做节流处理，以免频繁触发:
+```
+// throttle函数我们上节已经实现
+window.addEventListener('scroll', throttle(lazyload, 200));
+```
+
+- 方案二：getBoundingClientRect
+
+现在我们用另外一种方式来判断图片是否出现在了当前视口, 即 DOM 元素的 getBoundingClientRect API。
+
+上述的 lazyload 函数改成下面这样:
+
+```js
+function lazyload() {
+  for(let i = count; i <num; i++) {
+    // 元素现在已经出现在视口中
+    if(img[i].getBoundingClientRect().top < document.documentElement.clientHeight) {
+      if(img[i].getAttribute("src") !== "default.jpg") continue;
+      img[i].src = img[i].getAttribute("data-src");
+      count ++;
+    }
+  }
+}
+```
+- 方案三: IntersectionObserver
+
+这是浏览器内置的一个API，实现了监听window的scroll事件、判断是否在视口中以及节流三大功能。
+
+```js 
+let img = document.getElementsByTagName("img");
+
+const observer = new IntersectionObserver(changes => {
+  //changes 是被观察的元素集合
+  for(let i = 0, len = changes.length; i < len; i++) {
+    let change = changes[i];
+    // 通过这个属性判断是否在视口中
+    if(change.isIntersecting) {
+      const imgElement = change.target;
+      imgElement.src = imgElement.getAttribute("data-src");
+      observer.unobserve(imgElement);
+    }
+  }
+})
+Array.from(img).forEach(item => observer.observe(item));
+```
+这样就很方便地实现了图片懒加载，当然这个IntersectionObserver也可以用作其他资源的预加载，功能非常强大。
+
+## 以下代码输出结果？涉及异步问题
+```js
+async function async1() {
+    console.log('async1 start');
+    await async2();
+    console.log('async1 end');
+}
+
+async function async2() {
+    new Promise(function(resolve) {
+        console.log('promise1');
+        resolve();
+        console.log("promiseResolve")
+    }).then(function() {
+        setTimeout(function() {
+            console.log('setTimeout1');
+        })
+        console.log('promise2');
+    });
+}
+
+console.log('script start');
+
+setTimeout(function() {
+    console.log('setTimeout2');
+}, 0)
+
+async1();
+
+process.nextTick(() => {
+    console.log("nextTick");
+})
+
+new Promise(function(resolve) {
+    console.log('promise3');
+    resolve();
+    setTimeout(() => {
+        console.log('setTimeout3')
+    })
+}).then(function() {
+    console.log('promise4');
+})
+.then(() => console.log('promise5'))
+.then(() => console.log('promise6'))
+
+console.log('script end');
+
+/*
+script start
+async1 start
+promise1
+promiseResolve
+promise3
+nextTick // nextTick有自己的队列，优先于其它微任务先执行
+promise2
+script end
+async1 end
+promise4
+promise5
+promise6
+setTimeout2
+setTimeout3
+setTimeout1
+*/
+```
+
+## 说说回流（重排）和重绘
+
+1. 浏览器渲染机制
+
+浏览器采用流式布局模型（Flow Based Layout）
+
+浏览器会把HTML解析成 DOM，把 CSS 解析成 CSSOM，DOM 和 CSSOM 合并就产生了渲染树（Render Tree）。
+
+有了 RenderTree，我们就知道了所有节点的样式，然后计算他们在页面上的大小和位置，合成布局树，最后把节点绘制到页面上。
+
+由于浏览器使用流式布局，对 Render Tree 的计算通常只需要遍历一次就可以完成，但 table 及其内部元素除外，他们可能需要多次计算，通常要花3倍于同等元素的时间，这也是为什么要避免使用 table 布局的原因之一。
+注意：上面说的是首先会生成 Render Tree，也就是渲染树，其实这还是 16 年之前的事情，现在 Chrome 团队已经做了大量的重构，已经没有生成 Render Tree 的过程了。而布局树的信息已经非常完善，完全拥有 Render Tree 的功能。
+
+2. 重绘
+
+由于节点的几何属性发生改变或者由于样式发生改变而不会影响布局的，称为重绘，例如 outline, visibility, color、background-color 等，重绘的代价是高昂的，因为浏览器必须验证 DOM 树上其他节点元素的可见性。
+
+3. 回流
+
+回流是布局或者几何属性需要改变就称为回流。回流是影响浏览器性能的关键因素，因为其变化涉及到部分页面（或是整个页面）的布局更新。一个元素的回流可能会导致了其所有子元素以及 DOM 中紧随其后的节点、祖先节点元素的随后的回流
+
+4. 浏览器优化
+
+现代浏览器大多都是通过队列机制来批量更新布局，浏览器会把修改操作放在队列中，至少一个浏览器刷新（即16.6ms）才会清空队列，但当你获取布局信息的时候，队列中可能有会影响这些属性或方法返回值的操作，即使没有，浏览器也会强制清空队列，触发回流与重绘来确保返回正确的值。
+```js
+offsetTop、offsetLeft、offsetWidth、offsetHeight
+scrollTop、scrollLeft、scrollWidth、scrollHeight
+clientTop、clientLeft、clientWidth、clientHeight
+width、height
+getComputedStyle()
+getBoundingClientRect()
+所以，我们应该避免频繁的使用上述的属性，他们都会强制渲染刷新队列。
+```
+
+5. 减少重绘与回流
+
+CSS:
+
++ 使用 transform 替代 top
++ 使用 visibility 替换 display: none ，因为前者只会引起重绘，后者会引发回流（改变了布局
++ 避免使用 table 布局，可能很小的一个小改动会造成整个 table 的重新布局。
++ 尽可能在 DOM 树的最末端改变 class，回流是不可避免的，但可以减少其影响。尽可能在 DOM 树的最末端改变 class，可以限制了回流的范围，使其影响尽可能少的节点。
++ 避免设置多层内联样式，CSS 选择符从右往左匹配查找，避免节点层级过多。
++ 将动画效果应用到 position 属性为 absolute 或 fixed 的元素上，避免影响其他元素的布局，这样只是一个重绘，而不是回流，同时，控制动画速度可以选择 requestAnimationFrame，详见探讨 requestAnimationFrame。
++ 避免使用 CSS 表达式，可能会引发回流。
++ 将频繁重绘或者回流的节点设置为图层，图层能够阻止该节点的渲染行为影响别的节点，例如 will-change、video、iframe 等标签，浏览器会自动将该节点变为图层。
++ CSS3 硬件加速（GPU加速），使用 css3 硬件加速，可以让 transform、opacity、filters 这些动画不会引起回流重绘 。但是对于动画的其它属性，比如 background-color 这些，还是会引起回流重绘的，不过它还是可以提升这些动画的性能。
+
+JavaScript:
+
++ 避免频繁操作样式，最好一次性重写style属性，或者将样式列表定义为class并一次性更改class属性。
++ 避免频繁操作DOM，创建一个documentFragment，在它上面应用所有DOM操作，最后再把它添加到文档中。
++ 避免频繁读取会引发回流/重绘的属性，如果确实需要多次使用，就用一个变量缓存起来。
++ 对具有复杂动画的元素使用绝对定位，使它脱离文档流，否则会引起父元素及后续元素频繁回流。
+
+## 在移动端中怎样初始化根元素的字体大小？
+一个简易版的初始化根元素字体大小。页面开头处引入下面这段代码，用于动态计算 font-size：(假设你需要的1rem = 20px)
+
+```js
+(function () {
+  var html = document.documentElement;
+  function onWindowResize() {
+    html.style.fontSize = html.getBoundingClientRect().width / 20 + 'px';
+  }
+  window.addEventListener('resize', onWindowResize);
+  onWindowResize();
+})();
+```
++ document.documentElement：获取 document 的根元
++ html.getBoundingClientRect().width：获取 html 的宽度(窗口的宽度)
++ 监听 window 的 resize 事件
+
+一般还需要配合一个 meta 头：
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-sacle=1.0, maximum-scale=1.0, user-scalable=no" />
+```
+
+## 浏览器跨域问题
+浏览器为什么要阻止跨域请求？如何解决跨域？每次跨域请求都需要到达服务端吗？
+**什么是跨域**
+
+跨域是针对浏览器的“同源策略”提出的说法。之所以有“同源策略”这种模式是基于网络安全方面的考虑。所谓的同源策略关注三点：
+
+1. 协议 (http:www.baidu.com & https.www.baidu.com http 协议不同，跨域) 
+
+2. 域名 (https://www.aliyun.com & https://developer.aliyun.com 域名不同，跨域) 
+
+3. 端口 (http://localhost:8080 & http://localhost:8000 端口号不同，跨域)
+
+**哪些网络资源涉及到跨域**
+
+“同源策略”对于跨域网络资源的设定非常的清晰。这些场景涉及到跨域禁止操作：
+
++ 无法获取非同源网页的 cookie、localstorage 和 indexedDB。
++ 无法访问非同源网页的 DOM （iframe）。
++无法向非同源地址发送 AJAX 请求 或 fetch 请求（可以发送，但浏览器拒绝接受响应）。
+
+为什么要阻止跨域呢？上文我们说过是基于安全策略：比如一个恶意网站的页面通过 iframe 嵌入了银行的登录页面（二者不同源），如果没有同源限制，恶意网页上的 javascript 脚本就可以在用户登录银行的时候获取用户名和密码。
+
+**如何解决跨域**
+1. 通过 jsonp 跨域
+2. document.domain + iframe 跨域
+3. location.hash + iframe
+4. window.name + iframe 跨域
+5. postMessage 跨域
+6. 跨域资源共享（CORS）
+7. nginx 代理跨域
+8. nodejs 中间件代理跨域
+9. WebSocket 协议跨域
+
+## JSONP 的原理是什么？
+尽管浏览器有同源策略，但是 `<script>` 标签的` src `属性不会被同源策略所约束，可以获取任意服务器上的脚本并执行。jsonp 通过插入 script 标签的方式来实现跨域，参数只能通过 url 传入，仅能支持 get 请求
+
+实现原理:
+1. 创建 callback 方法
+2. 插入 script 标签
+3. 后台接受到请求，解析前端传过去的 callback 方法，返回该方法的调用，并且数据作为参数传入该方法
+4. 前端执行服务端返回的方法调用
+```js
+function jsonp ({url, params, callback}) {
+  return new Promise((resolve, reject) => {
+	// 创建 script 标签
+	let script = document.createElement('script')
+	// 将函数挂在 window 上
+	window[callback] = function (data) {
+	  resolve(data)
+	  // 代码执行后，删除 script 标签
+	  document.body.removeChild(script)
+	}
+	// 回调函数加在请求地址上
+	params = {...params, callback} // wb=b&callback=show
+	let arrs = []
+	for (let key in params) {
+	  array.push(`${key}=${params[key]}`)
+	}
+	script.src = `${url}?${arrs.join('&')}`
+	document.body.appendChild(script)
+  })
+}
+
+//具体使用
+function show(data) {
+  console.log(data)
+}
+jsonp({
+  url: 'http://localhost:3000/show',
+  params:{
+	// code 参数
+  },
+  callback: 'show'
+}).then(data => {
+  console.log(data)
+})
+```
+
+## 如何实现深拷贝？
+深拷贝最简单的实现是: JSON.parse(JSON.stringify(obj))
+
+JSON.parse(JSON.stringify(obj)) 是最简单的实现方式，但是有一些缺陷：
+
+1. 对象的属性值是函数时，无法拷贝。
+2. 原型链上的属性无法拷贝
+3. 不能正确的处理 Date 类型的数据
+4. 不能处理 RegExp
+5. 会忽略 symbol
+6. 会忽略 undefined
+
+实现一个 deepClone 函数:
+
+1. 如果是基本数据类型，直接返回
+2. 如果是 RegExp 或者 Date 类型，返回对应类型
+3. 如果是复杂数据类型，递归。
+4. 考虑循环引用的问题
+
+手写实现：
+```js
+// 递归拷贝
+function deepClone(obj, hash = new WeakMap()) {
+  if (obj instanceof RegExp) return new RegExp(obj)
+  if (obj instanceof Date) return new Date(obj)
+  if (obj === null || typeof obj !== 'object') {
+	// 如果不是复杂数据类型，直接返回	
+    return obj
+  }
+  if(hash.has(obj)) {
+	// 如果已经处理过相同的对象，直接获取（解决循环引用）
+	return hash.get(obj)
+  }
+  /**
+   * 如果 obj 是数组，那么 obj.constructor 是 [Function: Array]
+   * 如果 obj 是对象，那么 obj.constructor 是 [Function: Object]
+   */
+  let t = new obj.constructor()
+  hash.set(obj, t)
+  for (let ikey in obj) {
+	// 递归
+	if (obj.hasOwnProperty(key)) { // 是否是自身的属性
+	  t[key] = deepClone(obj[key], hash)
+	}  
+  }
+}
+```
+## 深拷贝怎么解决循环引用问题
+看个例子：
+```js
+function deepCopy(obj){
+    const res = Array.isArray(obj) ? [] : {};
+    for(let key in obj){
+        if(typeof obj[key] === 'object'){
+            res[key] = deepCopy(obj[key]);
+        }else{
+            res[key] = obj[key];
+        }
+    }
+    return res
+}
+var obj = {
+    a:1,
+    b:2,
+    c:[1,2,3],
+    d:{aa:1,bb:2},
+};
+obj.e = obj;
+console.log('obj',obj); // 不会报错
+
+const objCopy = deepCopy(obj);
+console.log(objCopy); //Uncaught RangeError: Maximum call stack size exceeded
+```
+从例子可以看到，当存在循环引用的时候，deepCopy会报错，栈溢出。
+
+obj对象存在循环引用时，打印它时是不会栈溢出
+
+深拷贝obj时，才会导致栈溢出
+
+循环应用问题解决
+
+即：目标对象存在循环应用时报错处理
+
+大家都知道，对象的 key 是不能是对象的。
+
+```js
+{{a:1}:2}
+// Uncaught SyntaxError: Unexpected token ':'
+```
+**参考解决方式一：使用weekmap:**
+解决循环引用问题，我们可以额外开辟一个存储空间，来存储当前对象和拷贝对象的对应关系 这个存储空间，需要可以存储key-value形式的数据，且key可以是一个引用类型， 我们可以选择 WeakMap  这种数据结构：
+
++ 检查 WeakMap  中有无克隆过的对象
++ 有，直接返回
++ 没有，将当前对象作为key，克隆对象作为value进行存储
++ 继续克隆
+
+```js
+function isObject(obj) {
+    return (typeof obj === 'object' || typeof obj === 'function') && obj !== null
+}
+function cloneDeep(source, hash = new WeakMap()) {
+  if (!isObject(source)) return source;
+  if (hash.has(source)) return hash.get(source); // 新增代码，查哈希表
+
+  var target = Array.isArray(source) ? [] : {};
+  hash.set(source, target); // 新增代码，哈希表设值
+
+  for (var key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      if (isObject(source[key])) {
+        target[key] = cloneDeep(source[key], hash); // 新增代码，传入哈希表
+      } else {
+        target[key] = source[key];
+      }
+    }
+  }
+  return target;
+}
+```
+
+**参考解决方式二：**
+```js
+const o = { a: 1, b: 2 };
+o.c = o;
+
+function isPrimitive(val) {
+    return Object(val) !== val;
+}
+const set = new Set();
+function clone(obj) {
+    const copied = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (isPrimitive(value)) {
+            copied[key] = value;
+        } else {
+            if (set.has(value)) {
+                copied[key] = { ...value };
+            } else {
+                set.add(value);
+                copied[key] = clone(value);
+            }
+        }
+    }
+    return copied;
+}
+```
+
+## 聊一下promise？
+es6+引入的解决异步问题的方案，Promise是一个构造函数，可以通过new来创建一个实例的promise对象。
+
+Promise 是一个对象，它代表了一个异步操作的最终完成或者失败。由于它的 then 方法和 catch、finally 方法会返回一个新的 Promise 所以可以允许我们链式调用，解决了传统的回调地狱问题。
+
+
+**Promise的状态一经改变就不能再改变**
+
+关于 then 以及 catch 方法：
++ Promise的状态一经改变就不能再改变。
++ .then和.catch都会返回一个新的Promise。
++ catch不管被连接到哪里，都能捕获上层未捕捉过的错误。
++ 在Promise中，返回任意一个非 promise 的值都会被包裹成 promise 对象，例如return 2会被包装为return Promise.resolve(2)。
++ Promise 的 .then 或者 .catch 可以被调用多次, 但如果Promise内部的状态一经改变，并且有了一个值，那么后续每次调用.then或者.catch的时候都会直接拿到该值。
++ .then 或者 .catch 中 return 一个 error 对象并不会抛出错误，所以不会被后续的 .catch 捕获。
++ .then 或 .catch 返回的值不能是 promise 本身，否则会造成死循环。
++ .then 或者 .catch 的参数期望是函数，传入非函数则会发生值透传。
++ .then方法是能接收两个参数的，第一个是处理成功的函数，第二个是处
++ 失败的函数，再某些时候你可以认为catch是.then第二个参数的简便写法。
++ .finally方法也是返回一个Promise，他在Promise结束的时候，无论结果为resolved还是rejected，都会执行里面的回调函数。
+
+finally方法：
++ .finally()方法不管Promise对象最后的状态如何都会执行
++ .finally()方法的回调函数不接受任何的参数，也就是说你在.finally()函数中是没法知道Promise最终的状态是resolved还是rejected的
++ 它最终返回的默认会是一个上一次的Promise对象值，不过如果抛出的是一个异常则返回异常的Promise对象。
+
+最后可以说一下all以及race方法：
++ Promise.all()的作用是接收一组异步任务，然后并行执行异步任务，并且在所有异步操作执行完后才执行回调。
++ .race()的作用也是接收一组异步任务，然后并行执行异步任务，只保留取第一个执行完成的异步操作的结果，其他的方法仍在执行，不过执行结果会被抛弃。
++ Promise.all().then()结果中数组的顺序和Promise.all()接收到的数组顺序一致。
++ all和race传入的数组中如果有会抛出异常的异步任务，那么只有最先抛出的错误会被捕获，并且是被then的第二个参数或者后面的catch捕获；但并不会影响数组中其它的异步任务的执行。
+
+缺点是：
+Promise也有一些缺点。首先，无法取消Promise，一旦新建它就会立即执行，无法中途取消。其次，如果不设置回调函数，Promise内部抛出的错误，不会反应到外部。第三，当处于pending状态时，无法得知目前进展到哪一个阶段（刚刚开始还是即将完成）。
+
+## 说一下promise.all 和 promise.race?
+**promise.all**
+
+```js
+const p = Promise.all([p1, p2, p3]);
+```
+Promise.all()方法用于将多个 Promise 实例，包装成一个新的 Promise 实例。
+
+Promise.all()方法接受一个数组作为参数，p1、p2、p3都是 Promise 实例，如果不是，就会先调用下面讲到的Promise.resolve方法，将参数转为 Promise 实例，再进一步处理。另外，Promise.all()方法的参数可以不是数组，但必须具有 Iterator 接口，且返回的每个成员都是 Promise 实例。
+
+p的状态是由p1,p2,p3 决定的，分成两种情况。
+
+（1）只有p1、p2、p3的状态都变成fulfilled，p的状态才会变成fulfilled，此时p1、p2、p3的返回值组成一个数组，传递给p的回调函数。
+
+（2）只要p1、p2、p3之中有一个被rejected，p的状态就变成rejected，此时第一个被reject的实例的返回值，会传递给p的回调函数。
+
+（3）接受一个 Promise 数组，当所有 Promise 成功时返回结果数组；若任意一个失败，立即以该失败原因拒绝。
+
+（4）即使某个 Promise 失败，其他 Promise 仍会继续执行，但结果会被忽略。
+

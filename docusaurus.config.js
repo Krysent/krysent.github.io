@@ -205,7 +205,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © New ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © New ${new Date().getFullYear()} My Project. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,

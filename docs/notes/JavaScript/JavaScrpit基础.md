@@ -139,6 +139,79 @@ console.log(n == m); //true
     
     // 这就是变量提升
 ```
+
+注意：
+
+使用var时， 会现将var定义变量提升到作用域的顶部，供使用然后再赋值。
+```js
+console.log(a)
+
+var a= 1
+
+console.log(a)
+
+// undefined,1    
+
+//相当于：
+var a ;
+console.log(a);
+a =1 ;
+console.log(a)
+//先将变量做提升 声明
+
+```
+关于var的作用域范围。只有函数作用域能影响var，`{}`块级不能影响.
+```js
+//函数会影响var的作用域
+function f (){
+    var a= 1
+}
+console.log(a)  // error: a is not defined
+
+
+
+//括号不能影响var的作用域
+if(true){
+    var a= 1
+}
+console.log(a)  // 1
+
+
+
+//或者 直接使用括号的情况
+{
+    var a = 1;
+}
+console.log(a) //1
+
+```
+
+所以当遇到for循环+var、let的情况时：
+```js
+for(var i = 0 ;i < 3 ; i++){
+    console.log(i)
+    setTimeout(()=>{
+        console.log(i)
+    },3000)
+}
+
+
+//以上情况等价于
+var i ;
+for(i = 0;i<3;i++){
+    console.log(i)
+    setTimeout(()=>{
+        console.log(i)
+
+    },1000)
+}
+
+//结果：0 1 2 3 3 3
+//解析： var提升到外部，三次循环都是公用的同一个i，计时器1s之后执行函数去打印，此时i经过循环已经变成3，所以三次计时器中的console.log都是取得循环三次后的i值3
+
+//换成使用let定义的话，则不会变量提升，每次循环都是单独的let值，123 
+```
+
 **在JavaScript中，变量声明（使用var关键字）会被"提升"到其作用域的顶部，这意味着在变量声明之前使用变量是合法的，尽管在代码中实际声明变量的位置之前。这是因为JavaScript引擎在执行代码之前会将变量声明提升到作用域的顶部。**
 
 又比如：
@@ -163,6 +236,8 @@ function example() {
 
 example();
 ```
+
+
 那为什么会变量提升呢？
 
 **JavaScript的编译过程通常分为两个主要步骤：预编译（Compilation）和执行（Execution）。预编译是指JavaScript引擎在实际执行代码之前，对代码进行一些处理，包括变量提升和函数声明。在预编译阶段，JavaScript引擎会扫描代码，找到所有变量声明和函数声明，并将它们提升到适当的作用域。**
@@ -309,6 +384,7 @@ AO里面没有a，为什么当console.log(a)时会输出呢？而我们发现，
 + 块级作用域
 
 **作用域链**
+
 作用域链就是从当前作用域开始一层一层向上寻找某个变量，直到找到全局作用域还是没找到，就宣布放弃。这种一层一层的关系，就是作用域链。
 
 **JS执行上下文栈(后面简称执行栈)**
@@ -319,6 +395,18 @@ AO里面没有a，为什么当console.log(a)时会输出呢？而我们发现，
 当栈顶的函数运行完成后，其对应的函数执行上下文将会从执行栈中Pop出，上下文的控制权将移动到当前执行栈的下一个执行上下文。
 
 ## 闭包
+闭包的核心是函数能够记住并访问其词法作用域（lexical scope），即使该函数在其词法作用域之外执行。
+```js
+function outer() {
+  let count = 0;
+  return function inner() { // inner函数持有对count的引用，形成闭包
+    return ++count;
+  };
+}
+const counter = outer();
+counter(); // 1
+counter(); // 2
+```
 ## 原型和原型链
 ## 深拷贝和浅拷贝
 ## 对象

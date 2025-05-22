@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [ master ]  # 指定触发分支，这里是 main 分支
+    branches: [ master ]  # 指定触发分支，这里是 master 分支
 
 jobs:
   build:

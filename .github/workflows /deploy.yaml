@@ -1,0 +1,26 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ master ]  # 指定触发分支，这里是 main 分支
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 环境
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # 检出代码到 runner
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4  # 设置 Node.js 环境
+        with:
+          node-version: '18'  # 指定 Node.js 版本
+
+      - name: Install dependencies
+        run: npm ci  # 使用 npm ci 确保依赖一致性
+
+      - name: Build
+        run: npm run deploy  # 运行构建命令
+
+  
